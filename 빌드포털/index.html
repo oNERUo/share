@@ -1,0 +1,102 @@
+<!doctype html>
+<!--
+  Another Hero 빌드 포털 (GitHub Pages용)
+  - 이 파일: 화면 구조(HTML)만 담당
+  - style.css: 디자인
+  - app.js: 업로드 / 목록 / 삭제 로직 (GitHub API 사용)
+  - builds.json: 업로드된 빌드 목록 (app.js가 자동으로 갱신)
+  - builds/<빌드ID>/ : 업로드된 Unity WebGL 빌드가 풀려서 저장되는 위치
+-->
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Another Hero 빌드 포털</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- zip 파일을 브라우저에서 바로 풀기 위한 라이브러리 (JSZip 3.10.1 고정 버전) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+</head>
+<body>
+  <header class="top">
+    <div>
+      <h1>Another Hero <span>빌드 포털</span></h1>
+      <p class="sub">Unity WebGL 빌드를 올리면 바로 브라우저에서 실행됩니다.</p>
+    </div>
+    <!-- 설정(토큰) 열기 버튼: 업로드/삭제하는 사람만 필요 -->
+    <button id="btnSettings" class="ghost">⚙ 업로드 설정</button>
+  </header>
+
+  <main>
+    <!-- ───────── 업로드 영역 ───────── -->
+    <section class="card" id="uploadCard">
+      <h2>새 빌드 올리기</h2>
+
+      <!-- 토큰이 없을 때 보이는 안내 -->
+      <p id="needToken" class="notice">업로드하려면 먼저 <b>⚙ 업로드 설정</b>에서 GitHub 토큰을 등록하세요. (보기만 할 때는 필요 없음)</p>
+
+      <!-- 파일 드롭 영역: zip 또는 빌드 폴더 -->
+      <label id="dropZone" class="drop">
+        <input type="file" id="fileZip" accept=".zip" hidden>
+        <strong>WebGL 빌드 zip을 여기로 끌어다 놓기</strong>
+        <span>또는 클릭해서 선택 · index.html이 들어 있는 빌드 폴더를 zip으로 묶어 주세요</span>
+      </label>
+      <div class="row">
+        <!-- 폴더째 선택하는 방법 (zip 만들기 귀찮을 때) -->
+        <label class="ghost small">
+          <input type="file" id="fileFolder" webkitdirectory multiple hidden>
+          📁 폴더로 선택
+        </label>
+        <span id="pickedInfo" class="muted">선택된 파일 없음</span>
+      </div>
+
+      <div class="grid2">
+        <label>빌드 이름 <input id="inTitle" placeholder="예: 로비 UI 적용 v0.3" maxlength="60"></label>
+        <label>올린 사람 <input id="inUploader" placeholder="예: 안상윤" maxlength="20"></label>
+      </div>
+      <label>메모 (변경 내용) <textarea id="inMemo" rows="2" placeholder="예: 가챠 화면 연결, 전투 밸런스 수정" maxlength="300"></textarea></label>
+
+      <button id="btnUpload" class="primary" disabled>업로드</button>
+
+      <!-- 진행 상황 표시 -->
+      <div id="progressWrap" hidden>
+        <div class="bar"><div id="progressBar"></div></div>
+        <p id="progressText" class="muted"></p>
+      </div>
+    </section>
+
+    <!-- ───────── 빌드 목록 영역 ───────── -->
+    <section class="card">
+      <div class="row between">
+        <h2>빌드 목록</h2>
+        <button id="btnRefresh" class="ghost small">↻ 새로고침</button>
+      </div>
+      <p class="muted small">업로드 직후에는 GitHub Pages 배포에 1~2분 정도 걸립니다. 실행이 안 되면 잠시 후 다시 눌러 주세요.</p>
+      <ul id="buildList" class="list"></ul>
+      <p id="emptyMsg" class="muted" hidden>아직 올라온 빌드가 없습니다.</p>
+    </section>
+  </main>
+
+  <!-- ───────── 설정 모달 (레포 정보 + 토큰) ───────── -->
+  <dialog id="dlgSettings">
+    <form method="dialog" class="settings">
+      <h2>업로드 설정</h2>
+      <p class="muted small">이 정보는 <b>내 브라우저에만</b> 저장되고 사이트 코드나 GitHub에는 올라가지 않습니다.</p>
+      <label>GitHub 사용자/조직 이름 (owner) <input id="cfgOwner" placeholder="예: team4-anotherhero"></label>
+      <label>레포 이름 (repo) <input id="cfgRepo" placeholder="예: builds"></label>
+      <label>브랜치 <input id="cfgBranch" placeholder="main"></label>
+      <label>개인 토큰 (Fine-grained, Contents 읽기/쓰기) <input id="cfgToken" type="password" placeholder="github_pat_..."></label>
+      <p id="cfgResult" class="muted small"></p>
+      <div class="row end">
+        <button type="button" id="btnTest" class="ghost">연결 테스트</button>
+        <button type="button" id="btnClear" class="ghost danger">토큰 지우기</button>
+        <button type="submit" id="btnSave" class="primary">저장</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- 화면 아래 잠깐 뜨는 알림 -->
+  <div id="toast" hidden></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
